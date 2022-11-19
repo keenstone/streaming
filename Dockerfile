@@ -12,8 +12,10 @@ RUN mvn clean package
 From openjdk:8-jre-alpine
 
 # copy jar from the first stage
+COPY --from=builder target/lib lib/
 COPY --from=builder target/testapp-1.0-SNAPSHOT.jar testapp-1.0-SNAPSHOT.jar
 
-EXPOSE 9080
+
+
 
 CMD ["java", "-jar", "testapp-1.0-SNAPSHOT.jar"]
