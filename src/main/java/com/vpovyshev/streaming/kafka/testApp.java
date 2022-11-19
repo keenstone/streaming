@@ -1,14 +1,18 @@
+package com.vpovyshev.streaming.kafka;
+
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
 
 
 public class testApp {
+    private static final Logger logger = LoggerFactory.getLogger(testApp.class);
 
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args){
 
         //Assign topicName to string variable
         String topicName = "quickstart";
@@ -40,11 +44,22 @@ public class testApp {
         props.put("value.serializer",
                 "org.apache.kafka.common.serialization.StringSerializer");
 
-        Producer<String, String> producer = new KafkaProducer<String, String>(props);
+        int threadAmount = 5;
+        Producer<String, String> producer = new KafkaProducer<>(props);
+        Thread[] dispatchers = new Thread[threadAmount];
+        for (int i = 0; i < threadAmount; i++) {
+            dispatchers[i] = new Thread(new Dispatcher(producer, topicName, "Thread"+i));
+            dispatchers[i].start();
+        }
 
-        for(int i = 0; i < 100; i++)
-            producer.send(new ProducerRecord<String, String>(topicName,"key"+Integer.toString(i),
-                    "value"+Integer.toString(i)));
-        producer.close();
+        try {
+            for (Thread t : dispatchers)
+                t.join();
+        } catch (InterruptedException e) {
+            logger.error("Thread Interrupted ");
+        } finally {
+            producer.close();
+        }
+
     }
 }
